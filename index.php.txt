@@ -1,0 +1,111 @@
+<?php
+// Database connection
+$conn = mysqli_connect("localhost", "root", "test@123", "mysql");
+// Check connection
+if (!$conn) {
+die("Connection failed: " . mysqli_connect_error());
+}
+$message = "";
+// Insert data
+if (isset($_POST['b1'])) {
+$name = trim($_POST['name']);
+$age = (int) $_POST['age'];
+$address = trim($_POST['address']);
+$phone = trim($_POST['phone']);
+$email = trim($_POST['email']);
+$card = trim($_POST['card']);
+$password = $_POST['password'];
+// Hash password before storing
+$hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+// Prepared statement
+$sql = "INSERT INTO users
+(name, age, address, phone, email, card, password)
+VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+$stmt = mysqli_prepare($conn, $sql);
+mysqli_stmt_bind_param(
+$stmt, "sisssss",
+$name, $age, $address, $phone,
+$email, $card, $hashedPassword
+);
+if (mysqli_stmt_execute($stmt)) {
+$message = "Data inserted successfully!";
+} else {
+$message = "Error: " . mysqli_stmt_error($stmt);
+}
+mysqli_stmt_close($stmt);
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Shopping Form</title>
+</head>
+<body>
+<center>
+<div class="box">
+<h1>Shopping Forms!!</h1>
+<form method="POST" action="index.php">
+Name: <input type="text" name="name" required><br><br>
+Age: <input type="number" name="age" required><br><br>
+Address: <input type="text" name="address" required><br><br>
+Phone Number: <input type="text" name="phone" required><br><br>
+Email: <input type="email" name="email" required><br><br>
+Credit Card: <input type="text" name="card" required><br><br>
+Password: <input type="password" name="password" required><br><br>
+<input type="submit" name="b1" value="SUBMIT">
+</form>
+</div>
+</center>
+<!-- Insert success or error message -->
+<center>
+<h3>
+<?php echo htmlspecialchars($message); ?>
+</h3>
+</center>
+<!-- Display database records -->
+<h2 align="center">Registered Users</h2>
+<table border="1" cellpadding="10" cellspacing="0" align="center">
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Age</th>
+<th>Address</th>
+<th>Phone</th>
+<th>Email</th>
+<th>Credit Card</th>
+<th>Password</th>
+</tr>
+<?php
+$result = mysqli_query(
+$conn,
+"SELECT id, name, age, address, phone, email, card
+FROM users ORDER BY id ASC"
+);
+if ($result) {
+while ($row = mysqli_fetch_assoc($result)) {
+$maskedCard = "";
+if (!empty($row['card'])) {
+$maskedCard = " " .
+substr($row['card'], -4);
+}
+?>
+<tr>
+<td><?php echo (int)$row['id']; ?></td>
+<td><?php echo htmlspecialchars($row['name']); ?></td>
+<td><?php echo (int)$row['age']; ?></td>
+<td><?php echo htmlspecialchars($row['address']); ?></td>
+<td><?php echo htmlspecialchars($row['phone']); ?></td>
+<td><?php echo htmlspecialchars($row['email']); ?></td>
+<td><?php echo htmlspecialchars($maskedCard); ?></td>
+<td>Stored securely</td>
+</tr>
+<?php
+}
+}
+mysqli_close($conn);
+?>
+</table>
+</body>
+</html>
